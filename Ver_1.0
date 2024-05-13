@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Road Geometric Design App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        .output {
+            margin-top: 20px;
+        }
+        .formula, .result {
+            margin-bottom: 15px;
+        }
+        .drawing {
+            border: 1px solid #ccc;
+            margin-top: 20px;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Road Geometric Design App</h1>
+        
+        <div class="input-group">
+            <label for="roadType">Road Type</label>
+            <select id="roadType">
+                <option value="NH">National Highway</option>
+                <option value="SH">State Highway</option>
+                <option value="MDR">Major District Road</option>
+                <option value="ODR">Other District Road</option>
+                <option value="VR">Village Road</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label for="terrainType">Terrain Type</label>
+            <select id="terrainType">
+                <option value="Plain">Plain</option>
+                <option value="Rolling">Rolling</option>
+                <option value="Mountainous">Mountainous</option>
+                <option value="Steep">Steep</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label for="designSpeed">Design Speed (km/h)</label>
+            <input type="number" id="designSpeed" value="80" min="20" max="120">
+        </div>
+
+        <div class="input-group">
+            <label for="rightOfWay">Right-of-Way Width (m)</label>
+            <input type="number" id="rightOfWay" value="45" min="12" max="120">
+        </div>
+
+        <div class="input-group">
+            <label for="carriagewayWidth">Carriageway Width (m)</label>
+            <input type="number" id="carriagewayWidth" value="3.75" min="3.5" max="3.75" step="0.01">
+        </div>
+
+        <div class="input-group">
+            <label for="medianWidth">Median Width (m)</label>
+            <input type="number" id="medianWidth" value="5" min="2.5" max="15">
+        </div>
+
+        <div class="input-group">
+            <label for="shoulderWidth">Shoulder Width (m)</label>
+            <input type="number" id="shoulderWidth" value="2" min="1.5" max="3.5">
+        </div>
+
+        <div class="input-group">
+            <label for="pavementCamber">Pavement Camber/Crossfall (%)</label>
+            <input type="number" id="pavementCamber" value="2.5" min="2.0" max="4.0" step="0.1">
+        </div>
+
+        <div class="input-group">
+            <label for="stoppingSightDistance">Stopping Sight Distance (m)</label>
+            <input type="number" id="stoppingSightDistance" value="100" min="20">
+        </div>
+
+        <div class="input-group">
+            <label for="overtakingSightDistance">Overtaking Sight Distance (m)</label>
+            <input type="number" id="overtakingSightDistance" value="200" min="40">
+        </div>
+
+        <div class="input-group">
+            <label for="intersectionSightDistance">Intersection Sight Distance (m)</label>
+            <input type="number" id="intersectionSightDistance" value="150" min="30">
+        </div>
+
+        <div class="input-group">
+            <label for="curveRadius">Circular Curve Radius (m)</label>
+            <input type="number" id="curveRadius" value="300" min="10">
+        </div>
+
+        <div class="input-group">
+            <label for="superElevation">Super-Elevation (%)</label>
+            <input type="number" id="superElevation" value="5" min="0" max="7" step="0.1">
+        </div>
+
+        <div class="input-group">
+            <label for="extraWidening">Extra Widening on Curves (m)</label>
+            <input type="number" id="extraWidening" value="0.5" min="0" step="0.1">
+        </div>
+
+        <div class="input-group">
+            <label for="transitionCurveLength">Transition Curve Length (m)</label>
+            <input type="number" id="transitionCurveLength" value="50" min="0">
+        </div>
+
+        <div class="input-group">
+            <label for="summitCurveLength">Summit Curve Length (m)</label>
+            <input type="number" id="summitCurveLength" value="400" min="0">
+        </div>
+
+        <div class="input-group">
+            <label for="valleyCurveLength">Valley Curve Length (m)</label>
+            <input type="number" id="valleyCurveLength" value="300" min="0">
+        </div>
+
+        <div class="input-group">
+            <label for="gradient">Gradient (%)</label>
+            <input type="number" id="gradient" value="4" min="0" max="12" step="0.1">
+        </div>
+
+        <button onclick="calculate()">Calculate</button>
+
+        <div class="output" id="output"></div>
+    </div>
+
+    <script>
+        function calculate() {
+            // Retrieve input values
+            const roadType = document.getElementById('roadType').value;
+            const terrainType = document.getElementById('terrainType').value;
+            const designSpeed = parseFloat(document.getElementById('designSpeed').value);
+            const rightOfWay = parseFloat(document.getElementById('rightOfWay').value);
+            const carriagewayWidth = parseFloat(document.getElementById('carriagewayWidth').value);
+            const medianWidth = parseFloat(document.getElementById('medianWidth').value);
+            const shoulderWidth = parseFloat(document.getElementById('shoulderWidth').value);
+            const pavementCamber = parseFloat(document.getElementById('pavementCamber').value);
+            const stoppingSightDistance = parseFloat(document.getElementById('stoppingSightDistance').value);
+            const overtakingSightDistance = parseFloat(document.getElementById('overtakingSightDistance').value);
+            const intersectionSightDistance = parseFloat(document.getElementById('intersectionSightDistance').value);
+            const curveRadius = parseFloat(document.getElementById('curveRadius').value);
+            const superElevation = parseFloat(document.getElementById('superElevation').value);
+            const extraWidening = parseFloat(document.getElementById('extraWidening').value);
+            const transitionCurveLength = parseFloat(document.getElementById('transitionCurveLength').value);
+            const summitCurveLength = parseFloat(document.getElementById('summitCurveLength').value);
+            const valleyCurveLength = parseFloat(document.getElementById('valleyCurveLength').value);
+            const gradient = parseFloat(document.getElementById('gradient').value);
+
+            // Calculations based on IRC 73 guidelines
+            let outputHtml = '<h2>Calculation Results</h2>';
+
+            // Example calculation for right-of-way
+            outputHtml += '<div class="formula"><strong>Right-of-Way Calculation:</strong><br>';
+            outputHtml += 'ROW = Design Traffic * Terrain Factor<br>';
+            outputHtml += 'ROW = ' + rightOfWay + ' m</div>';
+
+            // Example calculation for stopping sight distance
+            outputHtml += '<div class="formula"><strong>Stopping Sight Distance Calculation:</strong><br>';
+            outputHtml += 'SSD = 0.278 * Speed * Perception Reaction Time + (Speed^2 / (2 * Deceleration))<br>';
+            outputHtml += 'SSD = ' + stoppingSightDistance + ' m</div>';
+
+            // Additional calculations would go here
+
+            // Display results
+            document.getElementById('output').innerHTML = outputHtml;
+
+            // Draw road design
+            drawRoadDesign({
+                roadType, terrainType, designSpeed, rightOfWay, carriagewayWidth,
+                medianWidth, shoulderWidth, pavementCamber, stoppingSightDistance,
+                overtakingSightDistance, intersectionSightDistance, curveRadius,
+                superElevation, extraWidening, transitionCurveLength, summitCurveLength,
+                valleyCurveLength, gradient
+            });
+        }
+
+        function drawRoadDesign(params) {
+            const svgNamespace = "http://www.w3.org/2000/svg";
+            const width = 800;
+            const height = 600;
+            const svg = document.createElementNS(svgNamespace, "svg");
+            svg.setAttribute("width", width);
+            svg.setAttribute("height", height);
+            svg.setAttribute("class", "drawing");
+
+            // Draw the main carriageway
+            const carriageway = document.createElementNS(svgNamespace, "rect");
+            carriageway.setAttribute("x", 50);
+            carriageway.setAttribute("y", height / 2 - 50);
+            carriageway.setAttribute("width", width - 100);
+            carriageway.setAttribute("height", 100);
+            carriageway.setAttribute("fill", "#cccccc");
+            svg.appendChild(carriageway);
+
+            // Draw the median
+            const median = document.createElementNS(svgNamespace, "rect");
+            median.setAttribute("x", width / 2 - params.medianWidth / 2);
+            median.setAttribute("y", height / 2 - 50);
+            median.setAttribute("width", params.medianWidth);
+            median.setAttribute("height", 100);
+            median.setAttribute("fill", "#aaaaaa");
+            svg.appendChild(median);
+
+            // Draw the shoulders
+            const leftShoulder = document.createElementNS(svgNamespace, "rect");
+            leftShoulder.setAttribute("x", 50);
+            leftShoulder.setAttribute("y", height / 2 - 50 - params.shoulderWidth);
+            leftShoulder.setAttribute("width", width - 100);
+            leftShoulder.setAttribute("height", params.shoulderWidth);
+            leftShoulder.setAttribute("fill", "#999999");
+            svg.appendChild(leftShoulder);
+
+            const rightShoulder = document.createElementNS(svgNamespace, "rect");
+            rightShoulder.setAttribute("x", 50);
+            rightShoulder.setAttribute("y", height / 2 + 50);
+            rightShoulder.setAttribute("width", width - 100);
+            rightShoulder.setAttribute("height", params.shoulderWidth);
+            rightShoulder.setAttribute("fill", "#999999");
+            svg.appendChild(rightShoulder);
+
+            // Add annotations
+            const addText = (text, x, y) => {
+                const annotation = document.createElementNS(svgNamespace, "text");
+                annotation.setAttribute("x", x);
+                annotation.setAttribute("y", y);
+                annotation.setAttribute("fill", "black");
+                annotation.setAttribute("font-size", "14");
+                annotation.textContent = text;
+                svg.appendChild(annotation);
+            };
+
+            addText(`Carriageway Width: ${params.carriagewayWidth} m`, 60, height / 2 - 60);
+            addText(`Median Width: ${params.medianWidth} m`, width / 2 - params.medianWidth / 2, height / 2 - 60);
+            addText(`Left Shoulder Width: ${params.shoulderWidth} m`, 60, height / 2 - 60 - params.shoulderWidth);
+            addText(`Right Shoulder Width: ${params.shoulderWidth} m`, 60, height / 2 + 70);
+
+            // Append the SVG to the output div
+            document.getElementById('output').appendChild(svg);
+        }
+    </script>
+</body>
+</html>
