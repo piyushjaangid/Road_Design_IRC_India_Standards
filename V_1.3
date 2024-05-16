@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Road Design Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        .output {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .details {
+            font-size: 0.9em;
+            color: #555;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        svg {
+            border: 1px solid #ddd;
+            margin-top: 20px;
+        }
+    </style>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+    <h1>Road Design Tool</h1>
+    <form id="roadDesignForm">
+        <div class="input-group">
+            <label for="designSpeed">Design Speed (km/h) <small>(Default: 80)</small></label>
+            <input type="number" id="designSpeed" name="designSpeed" placeholder="Enter design speed">
+        </div>
+        <div class="input-group">
+            <label for="reactionTime">Reaction Time (s) <small>(Default: 2.5)</small></label>
+            <input type="number" id="reactionTime" name="reactionTime" placeholder="Enter reaction time">
+        </div>
+        <div class="input-group">
+            <label for="frictionCoefficient">Friction Coefficient <small>(Default: 0.35)</small></label>
+            <input type="number" id="frictionCoefficient" name="frictionCoefficient" step="0.01" placeholder="Enter friction coefficient">
+        </div>
+        <div class="input-group">
+            <label for="curveRadius">Horizontal Curve Radius (m) <small>(Default: 300)</small></label>
+            <input type="number" id="curveRadius" name="curveRadius" placeholder="Enter curve radius">
+        </div>
+        <div class="input-group">
+            <label for="roadWidth">Road Width (m) <small>(Default: 7.5)</small></label>
+            <input type="number" id="roadWidth" name="roadWidth" placeholder="Enter road width">
+        </div>
+        <div class="input-group">
+            <label for="shoulderWidth">Shoulder Width (m) <small>(Default: 1.5)</small></label>
+            <input type="number" id="shoulderWidth" name="shoulderWidth" placeholder="Enter shoulder width">
+        </div>
+        <div class="input-group">
+            <label for="camber">Camber (%) <small>(Default: 2.5)</small></label>
+            <input type="number" id="camber" name="camber" step="0.1" placeholder="Enter camber">
+        </div>
+        <button type="button" onclick="calculateDesign()">Calculate</button>
+    </form>
+
+    <div class="output" id="output">
+        <h2>Design Summary</h2>
+        <div id="summary"></div>
+        <h3>Calculations</h3>
+        <div id="calculations"></div>
+        <h3>Design Drawing</h3>
+        <div id="drawing"></div>
+        <h3>Typical Cross Section Schedule</h3>
+        <div id="crossSectionSchedule"></div>
+        <h3>Horizontal Alignment Report</h3>
+        <div id="horizontalAlignmentReport"></div>
+        <h3>Vertical Alignment Report</h3>
+        <div id="verticalAlignmentReport"></div>
+    </div>
+</div>
+
+<script>
+function calculateDesign() {
+    const designSpeed = parseFloat(document.getElementById('designSpeed').value) || 80;
+    const reactionTime = parseFloat(document.getElementById('reactionTime').value) || 2.5;
+    const frictionCoefficient = parseFloat(document.getElementById('frictionCoefficient').value) || 0.35;
+    const curveRadius = parseFloat(document.getElementById('curveRadius').value) || 300;
+    const roadWidth = parseFloat(document.getElementById('roadWidth').value) || 7.5;
+    const shoulderWidth = parseFloat(document.getElementById('shoulderWidth').value) || 1.5;
+    const camber = parseFloat(document.getElementById('camber').value) || 2.5;
+
+    // Calculations for SSD
+    const g = 9.81; // acceleration due to gravity in m/s^2
+    const designSpeedMps = designSpeed * 1000 / 3600; // convert speed to m/s
+
+    // SSD formula: SSD = vt + v^2 / (2gf)
+    const ssd = (designSpeedMps * reactionTime) + (Math.pow(designSpeedMps, 2) / (2 * frictionCoefficient * g));
+
+    // Calculations for Horizontal Curve
+    const e = Math.min(0.07, (Math.pow(designSpeedMps, 2) / (127 * curveRadius)));
+
+    // Generate summary and detailed steps
+    const summaryHtml = `
+        <p><strong>Design Speed:</strong> ${designSpeed} km/h</p>
+        <p><strong>Stopping Sight Distance (SSD):</strong> ${ssd.toFixed(2)} meters</p>
+        <p><strong>Horizontal Curve Radius:</strong> ${curveRadius} meters</p>
+        <p><strong>Super-elevation:</strong> ${e.toFixed(4)} (unitless)</p>
+        <p><strong>Road Width:</strong> ${roadWidth} meters</p>
+        <p><strong>Shoulder Width:</strong> ${shoulderWidth} meters</p>
+        <p><strong>Camber:</strong> ${camber} %</p>
+    `;
+
+    const calculationsHtml = `
+        <h4>Stopping Sight Distance (SSD)</h4>
+        <p>Design Speed: ${designSpeed} km/h = ${designSpeedMps.toFixed(2)} m/s</p>
+        <p>Reaction Time: ${reactionTime} seconds</p>
+        <p>Friction Coefficient: ${frictionCoefficient}</p>
+        <p>Acceleration due to Gravity: ${g} m/s²</p>
+        <p>SSD = (Design Speed × Reaction Time) + (Design Speed² / (2 × Friction Coefficient × Gravity))</p>
+        <p>SSD = (${designSpeedMps.toFixed(2)} × ${reactionTime}) + (${designSpeedMps.toFixed(2)}² / (2 × ${frictionCoefficient} × ${g}))</p>
+        <p>SSD = ${ssd.toFixed(2)} meters</p>
+        
+        <h4>Horizontal Curve Super-elevation</h4>
+        <p>Super-elevation (e) = Min(0.07, (Design Speed² / (127 × Curve Radius)))</p>
+        <p>e = Min(0.07, (${designSpeedMps.toFixed(2)}² / (127 × ${curveRadius}))</p>
+        <p>e = ${e.toFixed(4)} (unitless)</p>
+    `;
+
+    document.getElementById('summary').innerHTML = summaryHtml;
+    document.getElementById('calculations').innerHTML = calculationsHtml;
+
+    // Draw road cross-section using D3.js
+    drawRoadDesign(roadWidth, shoulderWidth, camber);
+
+    // Generate typical cross-section schedule table
+    generateTypicalCrossSectionSchedule();
+
+    // Generate horizontal alignment report table
+    generateHorizontalAlignmentReport();
+
+    // Generate vertical alignment report table
+    generateVerticalAlignmentReport();
+}
+
+function drawRoadDesign(roadWidth, shoulderWidth, camber) {
+    const width = 800;
+    const height = 400;
+    const scale = 10; // Scale to convert meters to pixels
+
+    d3.select("#drawing").html(""); // Clear previous drawing
+
+    const svg = d3.select("#drawing")
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    const roadGroup = svg.append("g")
+        .attr("transform", `translate(${width / 2}, ${height / 2})`);
+
+    // Draw road
+    roadGroup.append("rect")
+        .attr("x", -roadWidth * scale / 2)
+        .attr("y", -20)
+        .attr("width", roadWidth * scale)
+        .attr("height", 40)
+        .attr("fill", "gray");
+
+    // Draw shoulders
+    roadGroup.append("rect")
+        .attr("x", -roadWidth * scale / 2 - shoulderWidth * scale)
+        .attr("y", -20)
+        .attr("width", shoulderWidth * scale)
+        .attr("height", 40)
+        .attr("fill", "lightgray");
+
+    roadGroup.append("rect")
+        .attr("x", roadWidth * scale / 2)
+        .attr("y", -20)
+        .attr("width", shoulderWidth * scale)
+        .attr("height", 40)
+        .attr("fill", "lightgray");
+
+    // Draw camber
+    roadGroup.append("line")
+        .attr("x1", -roadWidth * scale / 2)
+        .attr("y1", 0)
+        .attr("x2", roadWidth * scale / 2)
+        .attr("y2", 0)
+        .attr("stroke", "black")
+        .attr("stroke-width", 2);
+
+    roadGroup.append("line")
+        .attr("x1", -roadWidth * scale / 2)
+        .attr("y1", 0)
+        .attr("x2", 0)
+        .attr("y2", -camber * scale)
+        .attr("stroke", "black")
+        .attr("stroke-width", 2);
+
+    roadGroup.append("line")
+        .attr("x1", roadWidth * scale / 2)
+        .attr("y1", 0)
+        .attr("x2", 0)
+        .attr("y2", -camber * scale)
+        .attr("stroke", "black")
+        .attr("stroke-width", 2);
+}
+
+function generateTypicalCrossSectionSchedule() {
+    const crossSectionData = [
+        // Sample data based on the provided images
+        { SlNo: 1, From: 145712, To: 145850, Length: 138, TCSNo: 2, Description: 'Eccentric Widening - Left side' },
+        { SlNo: 2, From: 145850, To: 146000, Length: 150, TCSNo: 2, Description: 'Eccentric widening-Left side (Left side cut section)' },
+        // Add more rows as needed
+    ];
+
+    let tableHtml = `
+        <table>
+            <thead>
+                <tr>
+                    <th>Sl. No.</th>
+                    <th>From</th>
+                    <th>To</th>
+                    <th>Length</th>
+                    <th>TCS No.</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    crossSectionData.forEach(row => {
+        tableHtml += `
+            <tr>
+                <td>${row.SlNo}</td>
+                <td>${row.From}</td>
+                <td>${row.To}</td>
+                <td>${row.Length}</td>
+                <td>${row.TCSNo}</td>
+                <td>${row.Description}</td>
+            </tr>
+        `;
+    });
+
+    tableHtml += `
+            </tbody>
+        </table>
+    `;
+
+    document.getElementById('crossSectionSchedule').innerHTML = tableHtml;
+}
+
+function generateHorizontalAlignmentReport() {
+    const horizontalAlignmentData = [
+        // Sample data based on the provided images
+        { ElementID: 1, StartChainage: 145712, EndChainage: 145850, Radius: 300, Direction: 'Left', Speed: 80, SuperElevation: 2 },
+        // Add more rows as needed
+    ];
+
+    let tableHtml = `
+        <table>
+            <thead>
+                <tr>
+                    <th>Element ID</th>
+                    <th>Start Chainage</th>
+                    <th>End Chainage</th>
+                    <th>Radius (m)</th>
+                    <th>Direction</th>
+                    <th>Speed (km/h)</th>
+                    <th>Super-elevation (%)</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    horizontalAlignmentData.forEach(row => {
+        tableHtml += `
+            <tr>
+                <td>${row.ElementID}</td>
+                <td>${row.StartChainage}</td>
+                <td>${row.EndChainage}</td>
+                <td>${row.Radius}</td>
+                <td>${row.Direction}</td>
+                <td>${row.Speed}</td>
+                <td>${row.SuperElevation}</td>
+            </tr>
+        `;
+    });
+
+    tableHtml += `
+            </tbody>
+        </table>
+    `;
+
+    document.getElementById('horizontalAlignmentReport').innerHTML = tableHtml;
+}
+
+function generateVerticalAlignmentReport() {
+    const verticalAlignmentData = [
+        // Sample data based on the provided images
+        { PVI: 1, Chainage: 145712, Level: 100, CurveLength: 200, GradeIn: 2, GradeOut: 2, KValue: 20 },
+        // Add more rows as needed
+    ];
+
+    let tableHtml = `
+        <table>
+            <thead>
+                <tr>
+                    <th>PVI</th>
+                    <th>Chainage (m)</th>
+                    <th>Level (m)</th>
+                    <th>Curve Length (m)</th>
+                    <th>Grade IN (%)</th>
+                    <th>Grade OUT (%)</th>
+                    <th>K Value</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    verticalAlignmentData.forEach(row => {
+        tableHtml += `
+            <tr>
+                <td>${row.PVI}</td>
+                <td>${row.Chainage}</td>
+                <td>${row.Level}</td>
+                <td>${row.CurveLength}</td>
+                <td>${row.GradeIn}</td>
+                <td>${row.GradeOut}</td>
+                <td>${row.KValue}</td>
+            </tr>
+        `;
+    });
+
+    tableHtml += `
+            </tbody>
+        </table>
+    `;
+
+    document.getElementById('verticalAlignmentReport').innerHTML = tableHtml;
+}
+</script>
+
+</body>
+</html>
